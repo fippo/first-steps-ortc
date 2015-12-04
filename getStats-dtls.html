@@ -50,12 +50,10 @@ gatherer2.onlocalcandidate = function (evt) {
 
 // Next, start the ICE transports with the parameters from the remote side
 // and the gatherer.
-transport1.start(gatherer1, gatherer2.getLocalParameters(), 'controlling');
 transport1.onicestatechange = function() {
   console.log('ICE transport 1 state change', transport1.state);
 };
 
-transport2.start(gatherer2, gatherer1.getLocalParameters(), 'controlled');
 transport2.onicestatechange = function() {
   console.log('ICE transport 2 state change', transport2.state);
 };
@@ -79,6 +77,8 @@ window.setInterval(function() {
 }, 500);
 // delay starting the dtls transports for 2 seconds
 window.setTimeout(function() {
+    transport1.start(gatherer1, gatherer2.getLocalParameters(), 'controlling');
+    transport2.start(gatherer2, gatherer1.getLocalParameters(), 'controlled');
     dtls1.start(dtls2.getLocalParameters());
     dtls2.start(dtls1.getLocalParameters());
 }, 2000);
