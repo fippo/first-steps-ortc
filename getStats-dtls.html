@@ -1,0 +1,87 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>How to send a MediaStreamTrack with ORTC</title>
+  <style>
+#container {
+  margin: 0 auto 0 auto;
+  max-width: 40em;
+}
+video {
+  height: 225px;
+  width: calc(50% - 12px)
+}
+  </style>
+</head>
+<body>
+  <div id="container">
+    <video id="localVideo" autoplay muted></video>
+    <video id="remoteVideo" autoplay></video>
+    <p>
+    This shows how to send a MediaStreamTrack with ORTC. Note that ORTC is only supported in Microsoft Edge right now and (at the time of this writing) is considered experimental.
+    </p>
+  </div>
+  <script>
+var iceOptions = { "gatherPolicy": "all", "iceServers": [] };
+
+// At the Sender side, create an ICE gatherer, an ICE transport
+// and a DTLS transport.
+var gatherer1 = new RTCIceGatherer(iceOptions);
+var transport1 = new RTCIceTransport(gatherer1);
+var dtls1 = new RTCDtlsTransport(transport1);
+
+// Do the same for the Receiver.
+var gatherer2 = new RTCIceGatherer(iceOptions);
+var transport2 = new RTCIceTransport(gatherer2);
+var dtls2 = new RTCDtlsTransport(transport2);
+
+var sender;
+var receiver;
+
+// Exchange ICE candidates.
+gatherer1.onlocalcandidate = function (evt) {
+    console.log('1 -> 2', evt.candidate);
+    transport2.addRemoteCandidate(evt.candidate);
+};
+gatherer2.onlocalcandidate = function (evt) {
+    console.log('2 -> 1', evt.candidate);
+    transport1.addRemoteCandidate(evt.candidate);
+};
+
+// Next, start the ICE transports with the parameters from the remote side
+// and the gatherer.
+transport1.start(gatherer1, gatherer2.getLocalParameters(), 'controlling');
+transport1.onicestatechange = function() {
+  console.log('ICE transport 1 state change', transport1.state);
+};
+
+transport2.start(gatherer2, gatherer1.getLocalParameters(), 'controlled');
+transport2.onicestatechange = function() {
+  console.log('ICE transport 2 state change', transport2.state);
+};
+
+// Then, start the DTLS transports with the parameters from the remote side.
+//dtls1.start(dtls2.getLocalParameters());
+dtls1.ondtlsstatechange = function() {
+  console.log('DTLS transport 1 state change', dtls1.state);
+};
+
+//dtls2.start(dtls1.getLocalParameters());
+dtls2.ondtlsstatechange = function() {
+  console.log('DTLS transport 2 state change', dtls2.state);
+};
+window.setInterval(function() {
+    dtls1.getStats().then(function(result) {
+      console.log('yay', result, dtls1.state);
+    }).catch(function (err) {
+      console.error('nay', err, dtls1.state);
+    });
+}, 500);
+// delay starting the dtls transports for 2 seconds
+window.setTimeout(function() {
+    dtls1.start(dtls2.getLocalParameters());
+    dtls2.start(dtls1.getLocalParameters());
+}, 2000);
+  </script>
+</body>
+</html>
