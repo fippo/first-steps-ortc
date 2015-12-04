@@ -115,11 +115,6 @@ navigator.mediaDevices.getUserMedia({video: true})
   // Last but not least, create the RTPSender to send the track.
   sender = new RTCRtpSender(stream.getVideoTracks()[0], dtls1);
   window.setInterval(function() {
-    sender.getStats().then(function(result) {
-      console.log('yay sender', result);
-    }).catch(function (err) {
-      console.error('nay sender', err);
-    });
     receiver.getStats().then(function(result) {
       console.log('yay receiver', result);
     }).catch(function (err) {
